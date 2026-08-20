@@ -4,7 +4,7 @@
 import { logger } from "../logger.js";
 
 /**
- * Available Azure DevOps MCP domains
+ * Available Azure DevOps MCP Safe domains
  */
 export enum Domain {
   ADVANCED_SECURITY = "advanced-security",
@@ -22,7 +22,7 @@ export enum Domain {
 export const ALL_DOMAINS = "all";
 
 /**
- * Manages domain parsing and validation for Azure DevOps MCP server tools
+ * Manages domain parsing and validation for Azure DevOps MCP Safe tools
  */
 export class DomainsManager {
   private static readonly AVAILABLE_DOMAINS = Object.values(Domain);

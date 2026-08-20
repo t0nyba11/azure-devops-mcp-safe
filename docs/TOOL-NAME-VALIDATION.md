@@ -1,6 +1,6 @@
 # Tool Name Validation Guardrails
 
-This document describes the validation system for Azure DevOps MCP server tool names and parameter names to prevent Claude API validation errors.
+This document describes the validation system for Azure DevOps MCP Safe tool and parameter names.
 
 ## Problem Statement
 
@@ -41,38 +41,7 @@ npm run validate-tools
 - Warns about parameter names longer than 32 characters (recommendation)
 - Fails build if invalid names are found
 
-### 2. ESLint Rule
-
-**Location:** `eslint-rules/tool-name-lint-rule.js`
-
-**Description:** Custom ESLint rule that validates tool names and parameter names during development.
-
-**Features:**
-
-- Real-time validation in IDE
-- Integrated with existing ESLint configuration
-- Shows errors for invalid names
-- Warnings for long parameter names
-
-**Configuration in `eslint.config.mjs`:**
-
-```javascript
-{
-  files: ["src/tools/*.ts"],
-  plugins: {
-    "custom": {
-      rules: {
-        "validate-tool-names": validateToolNamesRule,
-      },
-    },
-  },
-  rules: {
-    "custom/validate-tool-names": "error",
-  },
-}
-```
-
-### 3. Shared Validation Module
+### 2. Shared Validation Module
 
 **Location:** `src/shared/tool-validation.ts`
 
@@ -95,7 +64,7 @@ if (!validation.isValid) {
 }
 ```
 
-### 4. Test Coverage
+### 3. Test Coverage
 
 **Location:** `test/src/tool-name-validation.test.ts`
 
@@ -132,14 +101,13 @@ src/shared/tool-validation.ts         # Single source of truth for validation lo
 └── extractParameterNames()           # Extract parameters from Zod schemas
 
 scripts/build-validate-tools.js       # Build-time validation (imports shared module)
-eslint-rules/tool-name-lint-rule.js   # ESLint rule (imports shared module)
 test/src/tool-name-validation.test.ts # Comprehensive tests (100% coverage)
 ```
 
 **Benefits:**
 
 - **No Code Duplication**: Single validation implementation
-- **Consistent Behavior**: Same logic across build-time and development-time validation
+- **Consistent Behavior**: The build-time validator and tests use the same logic
 - **Maintainable**: Changes in one place update all validation systems
 - **Well-Tested**: 100% test coverage ensures reliability
 
@@ -149,7 +117,7 @@ test/src/tool-name-validation.test.ts # Comprehensive tests (100% coverage)
 
 - Use descriptive but concise names
 - Follow the pattern: `{category}_{action}_{object}`
-- Examples: `repo_create_pull_request`, `pipelines_get_build_status`
+- Examples: `repo_pull_request`, `pipelines_build`
 - Maximum 64 characters (current longest is 40 characters)
 
 ### Parameter Naming
@@ -164,7 +132,6 @@ test/src/tool-name-validation.test.ts # Comprehensive tests (100% coverage)
 1. Create new tools with descriptive names
 2. Run `npm run validate-tools` to check compliance
 3. Fix any validation errors before committing
-4. ESLint will catch issues in real-time during development
 
 ## Validation Rules
 
@@ -220,7 +187,4 @@ test/src/tool-name-validation.test.ts # Comprehensive tests (100% coverage)
 ```bash
 # Validate all tools
 npm run validate-tools
-
-# Run ESLint on tool files
-npx eslint src/tools/*.ts
 ```

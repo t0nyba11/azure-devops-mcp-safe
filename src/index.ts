@@ -26,10 +26,10 @@ const defaultAuthenticationType = isGitHubCodespaceEnv() ? "azcli" : "interactiv
 
 // Parse command line arguments using yargs
 const argv = yargs(hideBin(process.argv))
-  .scriptName("mcp-server-azuredevops")
+  .scriptName("azure-devops-mcp-safe")
   .usage("Usage: $0 <organization> [options]")
   .version(packageVersion)
-  .command("$0 <organization> [options]", "Azure DevOps MCP Server", (yargs) => {
+  .command("$0 <organization> [options]", "Azure DevOps MCP Safe", (yargs) => {
     yargs.positional("organization", {
       describe: "Azure DevOps organization name",
       type: "string",
@@ -71,7 +71,7 @@ function getAzureDevOpsClient(getAzureDevOpsToken: () => Promise<string>, userAg
     // since getPersonalAccessTokenHandler prepends ":" internally and just needs the raw token.
     const authHandler = authType === "pat" ? getPersonalAccessTokenHandler(Buffer.from(accessToken, "base64").toString("utf8").split(":").slice(1).join(":")) : getBearerHandler(accessToken);
     const connection = new WebApi(orgUrl, authHandler, undefined, {
-      productName: "AzureDevOps.MCP",
+      productName: "AzureDevOps.MCPSafe",
       productVersion: packageVersion,
       userAgent: userAgentComposer.userAgent,
     });
@@ -80,7 +80,7 @@ function getAzureDevOpsClient(getAzureDevOpsToken: () => Promise<string>, userAg
 }
 
 async function main() {
-  logger.info("Starting Azure DevOps MCP Server", {
+  logger.info("Starting Azure DevOps MCP Safe", {
     organization: orgName,
     organizationUrl: orgUrl,
     authentication: argv.authentication,
@@ -92,13 +92,8 @@ async function main() {
   });
 
   const server = new McpServer({
-    name: "Azure DevOps MCP Server",
+    name: "Azure DevOps MCP Safe",
     version: packageVersion,
-    icons: [
-      {
-        src: "https://cdn.vsassets.io/content/icons/favicon.ico",
-      },
-    ],
   });
 
   const userAgentComposer = new UserAgentComposer(packageVersion);
