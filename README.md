@@ -159,18 +159,7 @@ See the [examples](./docs/EXAMPLES.md) for sample prompts.
 
 For answers to common questions about Azure DevOps MCP Safe, see the [Frequently Asked Questions](./docs/FAQ.md).
 
-## Hall of Fame
-
-Thanks to everyone who contributes to the project.
-
-[![Contributors](https://contrib.rocks/image?repo=t0nyba11/azure-devops-mcp-safe)](https://github.com/t0nyba11/azure-devops-mcp-safe/graphs/contributors)
-
-> Generated with [contrib.rocks](https://contrib.rocks)
-
 ## License
 
 Licensed under the [MIT License](./LICENSE.md).
 
----
-
-_Trademarks: This project may include trademarks or logos for Microsoft or third parties. Use of Microsoft trademarks or logos must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general). Third-party trademarks are subject to their respective policies._
