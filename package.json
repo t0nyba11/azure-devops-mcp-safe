@@ -1,40 +1,42 @@
 {
-  "name": "@azure-devops/mcp",
-  "version": "2.9.0",
-  "mcpName": "microsoft.com/azure-devops",
-  "description": "MCP server for interacting with Azure DevOps",
+  "name": "azure-devops-mcp-safe",
+  "version": "0.1.0-alpha.0",
+  "description": "An independently maintained, read-only MCP server for Azure DevOps",
   "license": "MIT",
-  "author": "Microsoft Corporation",
-  "homepage": "https://github.com/microsoft/azure-devops-mcp",
-  "bugs": "https://github.com/microsoft/azure-devops-mcp/issues",
+  "author": "Tony",
+  "homepage": "https://github.com/t0nyba11/azure-devops-mcp-safe",
+  "bugs": "https://github.com/t0nyba11/azure-devops-mcp-safe/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/azure-devops-mcp.git"
+    "url": "git+https://github.com/t0nyba11/azure-devops-mcp-safe.git"
   },
   "type": "module",
-  "bin": {
-    "mcp-server-azuredevops": "dist/index.js"
-  },
   "files": [
     "dist"
   ],
+  "bin": {
+    "azure-devops-mcp-safe": "dist/index.js"
+  },
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "scripts": {
     "prebuild": "node -p \"'export const packageVersion = ' + JSON.stringify(require('./package.json').version) + ';\\n'\" > src/version.ts && prettier --write src/version.ts",
     "validate-tools": "tsc --noEmit && node scripts/build-validate-tools.js",
     "build": "tsc && shx chmod +x dist/*.js",
-    "prepare": "npm run build && husky",
     "watch": "tsc --watch",
     "inspect": "ALLOWED_ORIGINS=http://127.0.0.1:6274 npx @modelcontextprotocol/inspector@0.21.0 node dist/index.js",
     "start": "node -r tsconfig-paths/register dist/index.js",
-    "eslint": "eslint",
-    "eslint-fix": "eslint --fix",
     "format": "prettier --write .",
     "format-check": "prettier --check .",
     "clean": "shx rm -rf dist",
-    "test": "jest"
+    "test": "jest",
+    "prepublishOnly": "node -e \"if (process.env.npm_config_tag !== 'alpha') { console.error('Refusing to publish without --tag alpha'); process.exit(1) }\" && npm test && npm run validate-tools",
+    "prepack": "npm run build",
+    "release:alpha": "npm publish --tag alpha"
   },
   "dependencies": {
     "@azure/identity": "^4.10.0",
@@ -51,23 +53,13 @@
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^22.19.1",
-    "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-header": "^3.1.1",
     "glob": "^13.0.0",
-    "husky": "^9.1.7",
     "jest": "^30.0.2",
     "jest-extended": "^7.0.0",
-    "lint-staged": "^17.0.0",
     "prettier": "3.9.5",
     "shx": "^0.4.0",
     "ts-jest": "^29.4.6",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0"
-  },
-  "lint-staged": {
-    "**/*.(js|ts|jsx|tsx|json|css|md)": [
-      "npm run format"
-    ]
+    "typescript": "^5.9.3"
   }
 }

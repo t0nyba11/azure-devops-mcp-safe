@@ -19,3 +19,9 @@
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE
+
+## Fork Notice
+
+This repository is an independently maintained fork of
+[Microsoft's Azure DevOps MCP Server](https://github.com/microsoft/azure-devops-mcp).
+It is not affiliated with or endorsed by Microsoft.

@@ -11,7 +11,7 @@ class UserAgentComposer {
   private _mcpClientInfoAppended: boolean;
 
   constructor(packageVersion: string) {
-    this._userAgent = `AzureDevOps.MCP/${packageVersion} (local)`;
+    this._userAgent = `AzureDevOps.MCPSafe/${packageVersion} (local)`;
     this._mcpClientInfoAppended = false;
   }
 

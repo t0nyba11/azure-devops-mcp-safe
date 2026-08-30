@@ -7,10 +7,10 @@
     }
   ],
   "servers": {
-    "ado": {
+    "ado-safe": {
       "type": "stdio",
-      "command": "mcp-server-azuredevops",
-      "args": ["${input:ado_org}"],
+      "command": "node",
+      "args": ["dist/index.js", "${input:ado_org}"],
       "env": {
         "LOG_LEVEL": "debug"
       }

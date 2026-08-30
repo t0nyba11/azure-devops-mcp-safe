@@ -2,118 +2,13 @@
 // Licensed under the MIT License.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { apiVersion, getEnumKeys, safeEnumConvert } from "../utils.js";
+import { safeEnumConvert } from "../utils.js";
 import { WebApi } from "azure-devops-node-api";
 import { BuildQueryOrder, DefinitionQueryOrder } from "azure-devops-node-api/interfaces/BuildInterfaces.js";
 import { z } from "zod";
-import { StageUpdateType } from "azure-devops-node-api/interfaces/BuildInterfaces.js";
-import { ConfigurationType, RepositoryType } from "azure-devops-node-api/interfaces/PipelinesInterfaces.js";
 import { mkdirSync, createWriteStream } from "fs";
 import { createExternalContentResponse } from "../shared/content-safety.js";
 import { join, posix, resolve, win32 } from "path";
-import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { pipelinesWriteShape, RunPipelineArgs, CreatePipelineArgs, RenamePipelineArgs, UpdateBuildStageArgs, PipelinesWriteArgs } from "./pipelines.dto.js";
-
-const errorResult = (text: string): CallToolResult => ({ content: [{ type: "text", text }], isError: true });
-
-async function runPipeline(args: RunPipelineArgs, connectionProvider: () => Promise<WebApi>): Promise<CallToolResult> {
-  if (!args.pipelineId) return errorResult("pipelineId is required for run_pipeline");
-  if (!args.previewRun && args.yamlOverride) throw new Error("Parameter 'yamlOverride' can only be specified together with parameter 'previewRun'.");
-
-  const connection = await connectionProvider();
-  const pipelinesApi = await connection.getPipelinesApi();
-  const runRequest = {
-    previewRun: args.previewRun,
-    resources: { ...args.resources },
-    stagesToSkip: args.stagesToSkip,
-    templateParameters: args.templateParameters,
-    variables: args.variables,
-    yamlOverride: args.yamlOverride,
-  };
-  const pipelineRun = await pipelinesApi.runPipeline(runRequest, args.project, args.pipelineId, args.pipelineVersion);
-
-  if (pipelineRun.id === undefined) throw new Error("Failed to get build ID from pipeline run");
-
-  return { content: [{ type: "text", text: JSON.stringify(pipelineRun, null, 2) }] };
-}
-
-async function createPipeline(args: CreatePipelineArgs, connectionProvider: () => Promise<WebApi>): Promise<CallToolResult> {
-  if (!args.name) return errorResult("name is required for create_pipeline");
-  if (!args.yamlPath) return errorResult("yamlPath is required for create_pipeline");
-  if (!args.repositoryType) return errorResult("repositoryType is required for create_pipeline");
-  if (!args.repositoryName) return errorResult("repositoryName is required for create_pipeline");
-
-  const connection = await connectionProvider();
-  const pipelinesApi = await connection.getPipelinesApi();
-  const repositoryTypeEnumValue = safeEnumConvert(RepositoryType, args.repositoryType);
-  const repositoryPayload: Record<string, unknown> = { type: args.repositoryType };
-
-  if (repositoryTypeEnumValue === RepositoryType.AzureReposGit) {
-    repositoryPayload.id = args.repositoryId;
-    repositoryPayload.name = args.repositoryName;
-  } else if (repositoryTypeEnumValue === RepositoryType.GitHub) {
-    if (!args.repositoryConnectionId) throw new Error("Parameter 'repositoryConnectionId' is required for GitHub repositories.");
-    repositoryPayload.connection = { id: args.repositoryConnectionId };
-    repositoryPayload.fullname = args.repositoryName;
-  } else {
-    throw new Error("Unsupported repository type");
-  }
-
-  const yamlConfigurationType = getEnumKeys(ConfigurationType).find((k) => ConfigurationType[k as keyof typeof ConfigurationType] === ConfigurationType.Yaml);
-  const createParams: Record<string, unknown> = {
-    name: args.name,
-    folder: args.folder || "\\",
-    configuration: { type: yamlConfigurationType, path: args.yamlPath, repository: repositoryPayload, variables: undefined },
-  };
-  const newPipeline = await pipelinesApi.createPipeline(createParams, args.project);
-
-  return { content: [{ type: "text", text: JSON.stringify(newPipeline, null, 2) }] };
-}
-
-async function renamePipeline(args: RenamePipelineArgs, connectionProvider: () => Promise<WebApi>): Promise<CallToolResult> {
-  if (!args.pipelineId) return errorResult("pipelineId is required for rename_pipeline");
-  if (!args.name) return errorResult("name is required for rename_pipeline");
-
-  const connection = await connectionProvider();
-  const buildApi = await connection.getBuildApi();
-  const definition = await buildApi.getDefinition(args.project, args.pipelineId);
-  const updatedDefinition = await buildApi.updateDefinition({ ...definition, name: args.name }, args.project, args.pipelineId);
-
-  return { content: [{ type: "text", text: JSON.stringify(updatedDefinition, null, 2) }] };
-}
-
-async function updateBuildStage(args: UpdateBuildStageArgs, connectionProvider: () => Promise<WebApi>, tokenProvider: () => Promise<string>, userAgentProvider: () => string): Promise<CallToolResult> {
-  if (!args.buildId) return errorResult("buildId is required for update_build_stage");
-  if (!args.stageName) return errorResult("stageName is required for update_build_stage");
-  if (!args.status) return errorResult("status is required for update_build_stage");
-
-  const connection = await connectionProvider();
-  const orgUrl = connection.serverUrl;
-  const endpoint = `${orgUrl}/${encodeURIComponent(args.project)}/_apis/build/builds/${args.buildId}/stages/${encodeURIComponent(args.stageName)}?api-version=${apiVersion}`;
-  const token = await tokenProvider();
-  const body = { forceRetryAllJobs: args.forceRetryAllJobs, state: safeEnumConvert(StageUpdateType, args.status) };
-  const response = await fetch(endpoint, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}`, "User-Agent": userAgentProvider() },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to update build stage: ${response.status} ${errorText}`);
-  }
-
-  const updatedBuild = await response.text();
-
-  return { content: [{ type: "text", text: JSON.stringify(updatedBuild, null, 2) }] };
-}
-
-const pipelinesWriteErrorPrefixes: Record<PipelinesWriteArgs["action"], string> = {
-  run_pipeline: "Error running pipeline: ",
-  create_pipeline: "Error creating pipeline: ",
-  rename_pipeline: "Error renaming pipeline: ",
-  update_build_stage: "Error updating build stage: ",
-};
 
 const PIPELINE_TOOLS = {
   pipelines_build: "pipelines_build",
@@ -121,10 +16,9 @@ const PIPELINE_TOOLS = {
   pipelines_definition: "pipelines_definition",
   pipelines_run: "pipelines_run",
   pipelines_artifact: "pipelines_artifact",
-  pipelines_write: "pipelines_write",
 };
 
-function configurePipelineTools(server: McpServer, tokenProvider: () => Promise<string>, connectionProvider: () => Promise<WebApi>, userAgentProvider: () => string) {
+function configurePipelineTools(server: McpServer, connectionProvider: () => Promise<WebApi>) {
   // ─── pipelines_build ────────────────────────────────────────────────────────
   server.tool(
     PIPELINE_TOOLS.pipelines_build,
@@ -520,30 +414,6 @@ function configurePipelineTools(server: McpServer, tokenProvider: () => Promise<
       }
     }
   );
-
-  // ─── pipelines_write ────────────────────────────────────────────────────────
-  server.tool(PIPELINE_TOOLS.pipelines_write, "Write operations for pipelines and builds. Use the action parameter to specify the operation.", pipelinesWriteShape, async (args) => {
-    try {
-      switch (args.action) {
-        case "run_pipeline":
-          return await runPipeline(args, connectionProvider);
-        case "create_pipeline":
-          return await createPipeline(args, connectionProvider);
-        case "rename_pipeline":
-          return await renamePipeline(args, connectionProvider);
-        case "update_build_stage":
-          return await updateBuildStage(args, connectionProvider, tokenProvider, userAgentProvider);
-        default: {
-          const unsupportedAction: never = args.action;
-          return errorResult(`Unknown action: ${unsupportedAction}. Supported actions: ${Object.keys(pipelinesWriteErrorPrefixes).sort().join(", ")}`);
-        }
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error occurred";
-      return errorResult(`${pipelinesWriteErrorPrefixes[args.action]}${message}`);
-    }
-  });
 }
 
-export { PIPELINE_TOOLS, configurePipelineTools, runPipeline, createPipeline, renamePipeline, updateBuildStage };
-export type { RunPipelineArgs, CreatePipelineArgs, RenamePipelineArgs, UpdateBuildStageArgs };
+export { PIPELINE_TOOLS, configurePipelineTools };
