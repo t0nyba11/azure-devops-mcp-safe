@@ -52,6 +52,31 @@ These steps use Visual Studio Code and GitHub Copilot. For other supported clien
 2. Install [Node.js 20 or later](https://nodejs.org/en/download).
 3. Open your project in VS Code.
 
+#### Run the alpha release from npm
+
+Create `.vscode/mcp.json` in the project where you want to use the server:
+
+```json
+{
+  "inputs": [
+    {
+      "id": "ado_org",
+      "type": "promptString",
+      "description": "Azure DevOps organization name (e.g. 'contoso')"
+    }
+  ],
+  "servers": {
+    "ado": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "azure-devops-mcp-safe@alpha", "${input:ado_org}"]
+    }
+  }
+}
+```
+
+Using the `alpha` tag opts into the newest alpha release without selecting a specific prerelease version.
+
 #### Build from source
 
 1. Clone and build this repository:
@@ -162,4 +187,3 @@ For answers to common questions about Azure DevOps MCP Safe, see the [Frequently
 ## License
 
 Licensed under the [MIT License](./LICENSE.md).
-
